@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Duel PVP — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    margin:0; padding:0;
+    font-family:'Press Start 2P', monospace;
+    background:#000;
+    overflow:hidden;
+  }
+  .bg {
+    position:fixed; inset:0;
+    z-index:-1;
+  }
+  .bg img {
+    width:100%; height:100%; object-fit:cover;
+    filter:brightness(0.85);
+  }
+  .brand {
+    position:fixed; top:3vh; left:3vw;
+    color:#fff4c0;
+    text-shadow:2px 2px 0 #000;
+  }
+  .brand .title {
+    font-size:32px;
+    letter-spacing:3px;
+  }
+  .brand .slogan {
+    font-size:12px;
+    margin-top:4px;
+  }
+  .panel {
+    position:fixed;
+    bottom:10vh; left:50%; transform:translateX(-50%);
+    background:#c8b07a;
+    padding:12px 16px;
+    border:2px solid #5a4328;
+    border-radius:8px;
+    box-shadow:0 10px 0 #2b2015, inset 0 0 0 2px rgba(255,255,255,0.25);
+    min-width:280px;
+  }
+  .sys {
+    color:#361c0b;
+    font-size:12px;
+    margin-bottom:6px;
+  }
+  .bar {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:6px;
+  }
+  input {
+    flex:1;
+    background:#1b1b1b;
+    color:#fff;
+    border:2px solid #4b4030;
+    padding:6px 8px;
+    font-family:'Press Start 2P', monospace;
+    font-size:11px;
+  }
+  .btn {
+    background:#8c5b1f;
+    border:2px solid #3b2610;
+    color:#fff4c0;
+    padding:6px 10px;
+    font-size:10px;
+    cursor:pointer;
+    box-shadow:0 3px 0 #3b2610;
+  }
+  .btn:active { transform:translateY(1px); box-shadow:0 1px 0 #3b2610; }
+  .footer {
+    position:fixed;
+    bottom:6px; width:100%;
+    text-align:center;
+    font-size:10px;
+    color:#cbb890;
+  }
+</style>
+</head>
+<body>
+
+<div class="bg"><img src="assets/bg-wildy.png"></div>
+
+<div class="brand">
+  <div class="title">DUEL PVP</div>
+  <div class="slogan">Real time, real skill, real rewards.</div>
+</div>
+
+<section class="panel">
+  <div class="sys">Login to your account</div>
+  <div class="bar">
+    <input id="email" type="text" placeholder="EMAIL">
+  </div>
+  <div class="bar">
+    <input id="password" type="password" placeholder="PASSWORD">
+  </div>
+  <div class="bar">
+    <button class="btn" id="login">LOGIN</button>
+    <button class="btn" id="walletLogin">WALLET</button>
+  </div>
+</section>
+
+<div class="footer">© 2025 Duel PVP</div>
+
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  const SUPABASE_URL = "https://smgqccnggmyreacjyyil.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtZ3FjY25nZ215cmVhY2p5eWlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5ODIwNDgsImV4cCI6MjA3ODU1ODA0OH0.y1AeyXkKCdVvE3JUIlCyDl6p12TFrgMkEiUocUB4YMI";
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  document.getElementById('login').addEventListener('click', async () => {
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const pass = document.getElementById('password').value.trim();
+    if (!email || !pass) return alert("Fill email + password");
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("email,password")
+      .eq("email", email)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return alert("User not found");
+    if (data.password !== pass) return alert("Wrong password");
+
+    localStorage.setItem("duelpvp_email", email);
+    window.location.href = "/dashboard.html";
+  });
+
+  document.getElementById('walletLogin').addEventListener('click', async () => {
+    if (!window.ethereum) return alert("No wallet detected");
+
+    let accounts;
+    try {
+      accounts = await window.ethereum.request({ method:"eth_requestAccounts" });
+    } catch(e) {
+      return alert("Wallet login rejected");
+    }
+
+    const address = accounts[0].toLowerCase();
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("email,wallet_address")
+      .eq("wallet_address", address)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return alert("No account linked to this wallet");
+
+    localStorage.setItem("duelpvp_email", data.email);
+    window.location.href = "/dashboard.html";
+  });
+</script>
+
+</body>
+</html>
